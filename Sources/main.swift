@@ -7,7 +7,7 @@
 
 import Foundation
 
-let version = "0.1.0"
+let version = "0.1.1"
 
 // MARK: - Options
 
@@ -89,6 +89,33 @@ func fail(_ msg: String) -> Never {
 func log(_ msg: String) {
     let ts = ISO8601DateFormatter().string(from: Date())
     print("\(ts) \(msg)")
+    trimLogIfNeeded()
+}
+
+// When stdout is a file (as under launchd), keep it small: once it passes
+// logMaxBytes, cut it down to the most recent logKeepBytes. launchd opens the log
+// in append mode, so later writes continue at the new end of the file.
+let logMaxBytes: Int64 = 100_000
+let logKeepBytes: Int64 = 50_000
+
+func trimLogIfNeeded() {
+    fflush(stdout)
+    var st = stat()
+    guard fstat(STDOUT_FILENO, &st) == 0, (st.st_mode & S_IFMT) == S_IFREG, st.st_size > logMaxBytes else { return }
+    var pathBuf = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+    guard fcntl(STDOUT_FILENO, F_GETPATH, &pathBuf) != -1,
+          let file = FileHandle(forUpdatingAtPath: String(cString: pathBuf)) else { return }
+    defer { try? file.close() }
+    do {
+        try file.seek(toOffset: UInt64(st.st_size - logKeepBytes))
+        var tail = try file.readToEnd() ?? Data()
+        if let nl = tail.firstIndex(of: UInt8(ascii: "\n")) { tail = tail.suffix(from: tail.index(after: nl)) }  // start on a whole line
+        try file.truncate(atOffset: 0)
+        let note = "\(ISO8601DateFormatter().string(from: Date())) (log trimmed to the last \(logKeepBytes / 1000) KB)\n"
+        try file.write(contentsOf: Data(note.utf8) + tail)
+    } catch {
+        // Logging must never stop the listener.
+    }
 }
 
 // MARK: - Keyboard Maestro

@@ -76,7 +76,8 @@ launchd starts it at login and restarts it if it exits. When it first runs the m
 prompt for `km-music-trigger` to control Keyboard Maestro Engine. Allow it. If you miss the prompt,
 turn it on in **System Settings → Privacy & Security → Automation**.
 
-The log is at `~/Library/Logs/km-music-trigger.log`.
+The log is at `~/Library/Logs/km-music-trigger.log`. It logs one line per event that runs your macro.
+It trims itself: once it passes 100 KB it keeps only the most recent 50 KB.
 
 ```sh
 make status       # is it running?
