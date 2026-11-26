@@ -28,7 +28,7 @@ agent: install
 	sed -e 's|__BIN__|$(BINDIR)/$(BIN)|' -e 's|__LABEL__|$(LABEL)|' -e 's|__LOG__|$(LOG)|' \
 	    -e 's|__MACRO__|$(MACRO)|' -e 's|__ON__|$(ON)|' -e 's|__JSON__|$(JSON)|' \
 	    launchd/agent.plist.template > $(PLIST)
-	-launchctl bootout gui/$(UID_)/$(LABEL) 2>/dev/null
+	@launchctl bootout gui/$(UID_)/$(LABEL) 2>/dev/null || true
 	launchctl bootstrap gui/$(UID_) $(PLIST)
 	@echo "Loaded $(LABEL). Log: $(LOG)"
 
@@ -37,7 +37,7 @@ status:
 	@tail -5 $(LOG) 2>/dev/null || true
 
 uninstall:
-	-launchctl bootout gui/$(UID_)/$(LABEL) 2>/dev/null
+	@launchctl bootout gui/$(UID_)/$(LABEL) 2>/dev/null || true
 	rm -f $(PLIST) $(BINDIR)/$(BIN)
 
 clean:
