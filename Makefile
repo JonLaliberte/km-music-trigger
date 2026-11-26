@@ -29,6 +29,8 @@ agent: install
 	    -e 's|__MACRO__|$(MACRO)|' -e 's|__ON__|$(ON)|' -e 's|__JSON__|$(JSON)|' \
 	    launchd/agent.plist.template > $(PLIST)
 	@launchctl bootout gui/$(UID_)/$(LABEL) 2>/dev/null || true
+	@# bootout returns before the old copy has fully unloaded; wait for it (up to 5 s)
+	@for i in 1 2 3 4 5 6 7 8 9 10; do launchctl print gui/$(UID_)/$(LABEL) >/dev/null 2>&1 || break; sleep 0.5; done
 	launchctl bootstrap gui/$(UID_) $(PLIST)
 	@echo "Loaded $(LABEL). Log: $(LOG)"
 
